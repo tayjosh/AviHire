@@ -1,103 +1,96 @@
-import Image from "next/image";
+'use client';
+import { useState } from 'react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [location, setLocation] = useState('');
+  const locations = ['Miami, FL', 'Dallas, TX', 'Los Angeles, CA', 'Denver, CO', 'Atlanta, GA'];
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  return (
+    <main className="max-w-7xl mx-auto px-4 py-6 space-y-10">
+      {/* SPONSOR BANNERS WITH EFFECTS */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((id) => (
+          <div
+            key={id}
+            className="h-28 border rounded-xl shadow flex items-center justify-center text-xl font-semibold text-gray-700
+            bg-gradient-to-r from-gray-100 via-white to-gray-100
+            bg-[length:300%] hover:animate-shimmer
+            hover:-translate-y-1 hover:scale-105 transition-all duration-300
+            hover:ring-4 hover:ring-blue-300 hover:ring-opacity-50"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Sponsor Banner {id}
+          </div>
+        ))}
+      </section>
+
+      {/* TWO-COLUMN JOB DISPLAY */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        {/* LEFT: HOT JOBS */}
+        <div>
+          <h2 className="text-xl font-bold mb-4">🔥 Hot Aviation Jobs</h2>
+          <div className="space-y-4">
+            {[1, 2, 3].map((id) => (
+              <div
+                key={id}
+                className="border rounded-lg p-3 shadow-sm hover:shadow-md transition text-sm"
+              >
+                <h3 className="font-semibold mb-1 text-gray-800">A&P Mechanic – Dallas, TX</h3>
+                <p className="text-gray-500 mb-1">Permanent • Delta</p>
+                <p className="text-gray-700 mb-2">
+                  Long-term role. Housing assistance available.
+                </p>
+                <button className="text-blue-600 hover:underline text-xs">View Job</button>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* RIGHT: JOBS IN YOUR AREA */}
+        <div>
+          <h2 className="text-xl font-bold mb-4">📍 Jobs in Your Area</h2>
+
+          {/* SEARCH WITH DROPDOWN */}
+          <div className="mb-6">
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Enter city or airport"
+              className="w-full border px-3 py-2 rounded-md text-sm mb-2"
+            />
+            <div className="bg-white border rounded-md max-h-40 overflow-y-auto">
+              {locations
+                .filter((loc) => loc.toLowerCase().includes(location.toLowerCase()))
+                .map((loc, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setLocation(loc)}
+                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+                  >
+                    {loc}
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* FILTERED JOBS */}
+          <div className="space-y-4">
+            {[1, 2].map((id) => (
+              <div
+                key={id}
+                className="border rounded-lg p-3 shadow-sm hover:shadow-md transition text-sm"
+              >
+                <h3 className="font-semibold mb-1 text-gray-800">Avionics Tech – {location || 'Your City'}</h3>
+                <p className="text-gray-500 mb-1">Contract • Local Operator</p>
+                <p className="text-gray-700 mb-2">
+                  Must be local or willing to relocate. Great pay.
+                </p>
+                <button className="text-blue-600 hover:underline text-xs">View Job</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
