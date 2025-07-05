@@ -1,54 +1,58 @@
-"use client";
-import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
+'use client';
+import { useState } from 'react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '@/firebaseConfig';
+import { useRouter } from 'next/navigation';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const router = useRouter();
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignIn = async () => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/");
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const uid = userCred.user.uid;
+
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      const role = userDoc.data()?.role;
+
+      if (role === 'business') {
+        router.push('/dashboard/business');
       } else {
-        setError("An unknown error occurred.");
+        router.push('/'); // ✅ Redirect users to the homepage
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert('Login failed: ' + error.message);
       }
     }
   };
 
   return (
-    <div className="max-w-md mx-auto py-20 px-4">
-      <h1 className="text-3xl font-bold mb-6 text-center">Sign In</h1>
-      <form onSubmit={handleSignIn} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          className="w-full border p-2 rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full border p-2 rounded"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        <button className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
-          Sign In
-        </button>
-      </form>
-    </div>
+    <main className="max-w-md mx-auto p-6">
+      <h1 className="text-xl font-bold mb-4">Sign In</h1>
+      <input
+        type="email"
+        placeholder="Email"
+        className="w-full mb-2 p-2 border"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        className="w-full mb-4 p-2 border"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <button
+        onClick={handleSignIn}
+        className="w-full bg-blue-600 text-white py-2 rounded"
+      >
+        Sign In
+      </button>
+    </main>
   );
 }

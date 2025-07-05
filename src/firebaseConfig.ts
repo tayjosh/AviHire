@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -6,13 +6,12 @@ const firebaseConfig = {
   apiKey: "AIzaSyA98QvCVSyddNRWBQ9fbhj0-aE_FMaBz_s",
   authDomain: "avihire-e2102.firebaseapp.com",
   projectId: "avihire-e2102",
-  storageBucket: "avihire-e2102.appspot.com",
+  storageBucket: "avihire-e2102.firebasestorage.app",
   messagingSenderId: "212372485335",
-  appId: "1:212372485335:web:your-app-id-goes-here" // 🔧 replace this with actual App ID from Firebase console
+  appId: "1:212372485335:web:84b88251ee9af5250f6c92",
+  measurementId: "G-0D0331BJ72"
 };
 
-// Prevent re-init on hot reload
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-
+const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
