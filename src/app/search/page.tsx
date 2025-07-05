@@ -1,4 +1,6 @@
 'use client';
+// File: src/app/search/page.tsx
+// This file is a Next.js page that handles job search functionality.
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
