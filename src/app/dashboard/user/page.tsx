@@ -26,6 +26,7 @@ interface JobAd {
 }
 
 export default function UserDashboard() {
+  // All hooks MUST be declared before any conditional returns
   const [ads, setAds] = useState<JobAd[]>([]);
   const [showActive, setShowActive] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
@@ -35,6 +36,7 @@ export default function UserDashboard() {
   const [user, userLoading] = useAuthState(auth);
   const router = useRouter();
 
+  // Define fetchAds with useCallback BEFORE any returns
   const fetchAds = useCallback(async () => {
     if (!user) return;
     const q = query(collection(db, 'jobAds'), where('businessId', '==', user.uid));
@@ -43,6 +45,7 @@ export default function UserDashboard() {
     setAds(list);
   }, [user]);
 
+  // First useEffect - verify access
   useEffect(() => {
     (async () => {
       if (!user && !userLoading) {
@@ -61,12 +64,14 @@ export default function UserDashboard() {
     })();
   }, [user, userLoading, router]);
 
+  // Second useEffect - fetch ads when role is verified
   useEffect(() => {
     if (roleVerified) {
       fetchAds();
     }
   }, [roleVerified, fetchAds]);
 
+  // NOW we can have conditional returns
   if (userLoading || checkingRole) return <PlaneLoader />;
   if (!roleVerified) return null;
 
@@ -172,5 +177,5 @@ export default function UserDashboard() {
         </section>
       </div>
     </main>
-);
+  );
 }

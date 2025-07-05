@@ -34,14 +34,14 @@ export default function BusinessDashboard() {
   const [showExpired, setShowExpired] = useState(false);
   const [roleVerified, setRoleVerified] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [isLoadingAds, setIsLoadingAds] = useState(false);
 
   const [user, userLoading] = useAuthState(auth);
   const router = useRouter();
 
   const fetchAds = useCallback(async () => {
     if (!user) return;
-    setLoading(true);
+    setIsLoadingAds(true);
     const q = query(
       collection(db, 'jobAds'),
       where('businessId', '==', user.uid)
@@ -52,7 +52,7 @@ export default function BusinessDashboard() {
       ...d.data(),
     })) as JobAd[];
     setAds(adData);
-    setLoading(false);
+    setIsLoadingAds(false);
   }, [user]);
 
   useEffect(() => {
@@ -69,7 +69,8 @@ export default function BusinessDashboard() {
             return;
           }
           setRoleVerified(true);
-        } catch {
+        } catch (error) {
+          console.error('Error verifying access:', error);
           router.push('/signin');
         } finally {
           setCheckingRole(false);
@@ -85,8 +86,8 @@ export default function BusinessDashboard() {
     }
   }, [roleVerified, fetchAds]);
 
-  // wait for auth, role check, or ads load
-  if (userLoading || checkingRole || loading) {
+  // Wait for auth, role check, or ads load
+  if (userLoading || checkingRole || isLoadingAds) {
     return <PlaneLoader />;
   }
   if (!roleVerified) return null;

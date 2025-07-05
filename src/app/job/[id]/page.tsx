@@ -8,18 +8,29 @@ import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { Dialog } from '@headlessui/react';
 import Link from 'next/link';
 
-type Job = {
+// Define proper types instead of using 'any'
+interface Job {
   title: string;
   company: string;
   location: string;
   type: string;
   description: string;
   timestamp?: { seconds: number; nanoseconds?: number };
-};
+}
+
+interface ApplicationData {
+  jobId: string;
+  jobTitle: string;
+  name: string;
+  email: string;
+  coverLetter: string;
+  userId: string;
+  timestamp: Date;
+}
 
 export default function JobDetailPage() {
   const params = useParams();
-  // ensure we have a string, never an array
+  // Ensure we have a string, never an array
   const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [user] = useAuthState(auth);
@@ -56,7 +67,7 @@ export default function JobDetailPage() {
     if (!user || !job || !idParam) return;
     setSubmitting(true);
     try {
-      await addDoc(collection(db, 'applications'), {
+      const applicationData: ApplicationData = {
         jobId: idParam,
         jobTitle: job.title,
         name: applicantName,
@@ -64,7 +75,9 @@ export default function JobDetailPage() {
         coverLetter,
         userId: user.uid,
         timestamp: new Date(),
-      });
+      };
+      
+      await addDoc(collection(db, 'applications'), applicationData);
       setSubmitted(true);
     } catch (err) {
       console.error('Failed to submit application:', err);

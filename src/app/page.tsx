@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-
 export default function Home() {
   const [location, setLocation] = useState('');
   const locations = ['Miami, FL', 'Dallas, TX', 'Los Angeles, CA', 'Denver, CO', 'Atlanta, GA'];
