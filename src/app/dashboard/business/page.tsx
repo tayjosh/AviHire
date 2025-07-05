@@ -29,25 +29,30 @@ interface JobAd {
 
 export default function BusinessDashboard() {
   const [ads, setAds] = useState<JobAd[]>([]);
-  const [loading, setLoading] = useState(true);             // ← NEW
   const [showActive, setShowActive] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
   const [showExpired, setShowExpired] = useState(false);
   const [roleVerified, setRoleVerified] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [user, userLoading] = useAuthState(auth);
   const router = useRouter();
 
   const fetchAds = useCallback(async () => {
     if (!user) return;
-    setLoading(true);                                       // ← NEW
-    const q = query(collection(db, 'jobAds'), where('businessId', '==', user.uid));
+    setLoading(true);
+    const q = query(
+      collection(db, 'jobAds'),
+      where('businessId', '==', user.uid)
+    );
     const snapshot = await getDocs(q);
-    const adData = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as JobAd[];
-
-    setAds(adData);                                         // ← duplicate removed
-    setLoading(false);                                      // ← NEW
+    const adData = snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    })) as JobAd[];
+    setAds(adData);
+    setLoading(false);
   }, [user]);
 
   useEffect(() => {
@@ -75,10 +80,12 @@ export default function BusinessDashboard() {
   }, [user, userLoading, router]);
 
   useEffect(() => {
-    if (roleVerified) fetchAds();
+    if (roleVerified) {
+      fetchAds();
+    }
   }, [roleVerified, fetchAds]);
 
-  // Show loader while authenticating, role-checking, or fetching ads
+  // wait for auth, role check, or ads load
   if (userLoading || checkingRole || loading) {
     return <PlaneLoader />;
   }
@@ -92,13 +99,11 @@ export default function BusinessDashboard() {
       ? now.seconds - ad.createdAt.seconds < SEVEN_DAYS
       : true
   );
-
   const expiredAds = ads.filter((ad) =>
     ad.tier === 'premium'
       ? now.seconds - ad.createdAt.seconds >= SEVEN_DAYS
       : false
   );
-
   const premiumAds = currentAds.filter((ad) => ad.tier === 'premium');
 
   return (
@@ -113,7 +118,8 @@ export default function BusinessDashboard() {
                 onClick={() => setShowActive((o) => !o)}
                 className="w-full text-left font-medium"
               >
-                🟢 Active Ads ({currentAds.length}) {showActive ? '▲' : '▼'}
+                🟢 Active Ads ({currentAds.length}){' '}
+                {showActive ? '▲' : '▼'}
               </button>
               {showActive && (
                 <ul className="pl-4 text-sm mt-1 space-y-1">
@@ -129,7 +135,8 @@ export default function BusinessDashboard() {
                 onClick={() => setShowPremium((o) => !o)}
                 className="w-full text-left font-medium"
               >
-                🔥 Hot Jobs ({premiumAds.length}) {showPremium ? '▲' : '▼'}
+                🔥 Hot Jobs ({premiumAds.length}){' '}
+                {showPremium ? '▲' : '▼'}
               </button>
               {showPremium && (
                 <ul className="pl-4 text-sm mt-1 space-y-1">
@@ -145,7 +152,8 @@ export default function BusinessDashboard() {
                 onClick={() => setShowExpired((o) => !o)}
                 className="w-full text-left font-medium"
               >
-                🔴 Expired Ads ({expiredAds.length}) {showExpired ? '▲' : '▼'}
+                🔴 Expired Ads ({expiredAds.length}){' '}
+                {showExpired ? '▲' : '▼'}
               </button>
               {showExpired && (
                 <ul className="pl-4 text-sm mt-1 space-y-1">
@@ -179,7 +187,8 @@ export default function BusinessDashboard() {
                   <li key={ad.id} className="border rounded p-4">
                     <div className="font-bold">{ad.title}</div>
                     <div className="text-sm text-gray-600">
-                      {ad.location} • {ad.jobType} • {ad.tier.toUpperCase()}
+                      {ad.location} • {ad.jobType} •{' '}
+                      {ad.tier.toUpperCase()}
                     </div>
                     <div className="text-xs text-gray-500">
                       {ad.tier === 'premium'
