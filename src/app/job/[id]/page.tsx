@@ -1,17 +1,29 @@
 'use client';
+
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/firebase/firebaseConfig';
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { Dialog } from '@headlessui/react';
 import Link from 'next/link';
 
+type Job = {
+  title: string;
+  company: string;
+  location: string;
+  type: string;
+  description: string;
+  timestamp?: { seconds: number; nanoseconds?: number };
+};
+
 export default function JobDetailPage() {
-  const { id } = useParams();
-  const router = useRouter();
+  const params = useParams();
+  // ensure we have a string, never an array
+  const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
+
   const [user] = useAuthState(auth);
-  const [job, setJob] = useState<any>(null);
+  const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applicantName, setApplicantName] = useState('');
@@ -21,30 +33,31 @@ export default function JobDetailPage() {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    const fetchJob = async () => {
-      if (!id) return;
+    if (!idParam) {
+      setLoading(false);
+      return;
+    }
+    (async () => {
       try {
-        const docRef = doc(db, 'jobs', String(id));
-        const snapshot = await getDoc(docRef);
-        if (snapshot.exists()) {
-          setJob(snapshot.data());
+        const jobRef = doc(db, 'jobs', idParam);
+        const snap = await getDoc(jobRef);
+        if (snap.exists()) {
+          setJob(snap.data() as Job);
         }
-      } catch (error) {
-        console.error('Error fetching job:', error);
+      } catch (err) {
+        console.error('Error fetching job:', err);
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchJob();
-  }, [id]);
+    })();
+  }, [idParam]);
 
   const handleApply = async () => {
-    if (!user) return;
+    if (!user || !job || !idParam) return;
     setSubmitting(true);
     try {
       await addDoc(collection(db, 'applications'), {
-        jobId: id,
+        jobId: idParam,
         jobTitle: job.title,
         name: applicantName,
         email: applicantEmail,
@@ -63,7 +76,7 @@ export default function JobDetailPage() {
   if (loading) return <div className="p-6">Loading job...</div>;
   if (!job) return <div className="p-6">Job not found.</div>;
 
-  const postedDate = job.timestamp?.seconds
+  const postedDate = job.timestamp
     ? new Date(job.timestamp.seconds * 1000).toLocaleDateString()
     : 'Unknown';
 
@@ -87,25 +100,27 @@ export default function JobDetailPage() {
         {user ? (
           <button
             onClick={() => setShowApplyModal(true)}
-            className="inline-block bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 text-sm"
+            className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 text-sm"
           >
             Apply Now
           </button>
         ) : (
-          <div className="text-sm text-gray-600 dark:text-gray-300">
-            <Link href={`/signin?redirect=/job/${id}`} className="text-blue-600 hover:underline">
+          <p className="text-sm text-gray-600">
+            <Link href={`/signin?redirect=/job/${idParam}`} className="text-blue-600 hover:underline">
               Sign in
             </Link>{' '}
-            to apply for this job.
-          </div>
+            to apply.
+          </p>
         )}
       </div>
 
-      {/* Apply Modal */}
-      <Dialog open={showApplyModal} onClose={() => setShowApplyModal(false)} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-        <Dialog.Panel className="bg-white dark:bg-gray-900 w-full max-w-md p-6 rounded shadow-lg space-y-4">
-          <Dialog.Title className="text-lg font-bold text-gray-800 dark:text-white">Apply for {job.title}</Dialog.Title>
-
+      <Dialog
+        open={showApplyModal}
+        onClose={() => setShowApplyModal(false)}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+      >
+        <Dialog.Panel className="bg-white w-full max-w-md p-6 rounded shadow-lg space-y-4">
+          <Dialog.Title className="text-lg font-bold">Apply for {job.title}</Dialog.Title>
           <input
             type="text"
             placeholder="Your Name"
@@ -127,7 +142,6 @@ export default function JobDetailPage() {
             className="w-full border px-3 py-2 rounded text-sm"
             rows={4}
           />
-
           <div className="flex justify-between">
             <button
               onClick={() => setShowApplyModal(false)}
@@ -137,8 +151,8 @@ export default function JobDetailPage() {
             </button>
             <button
               onClick={handleApply}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm disabled:opacity-50"
               disabled={submitting || !applicantName || !applicantEmail}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm disabled:opacity-50"
             >
               {submitting ? 'Submitting...' : submitted ? 'Submitted!' : 'Submit'}
             </button>

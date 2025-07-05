@@ -1,140 +1,176 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/firebase/firebaseConfig';
-import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { Sun, Moon, Menu, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  Timestamp,
+  doc,
+  getDoc,
+} from 'firebase/firestore';
+import Link from 'next/link';
+import PlaneLoader from '@/components/PlaneLoader';
 
-export default function Header() {
-  const [user, loading] = useAuthState(auth);
-  const [role, setRole] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+interface JobAd {
+  id: string;
+  title: string;
+  location: string;
+  jobType: string;
+  tier: 'regular' | 'premium';
+  createdAt: Timestamp;
+}
+
+export default function BusinessDashboard() {
+  const [ads, setAds] = useState<JobAd[]>([]);
+  const [showActive, setShowActive] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
+  const [showExpired, setShowExpired] = useState(false);
+  const [roleVerified, setRoleVerified] = useState(false);
+  const [checkingRole, setCheckingRole] = useState(true);
+  const [user, userLoading] = useAuthState(auth);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (user) {
-        const docSnap = await getDoc(doc(db, 'users', user.uid));
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setRole(data.role);
-          setUserName(data.name || null);
-        }
-      } else {
-        setRole(null);
-        setUserName(null);
-      }
-    };
-    fetchUserData();
+  const fetchAds = useCallback(async () => {
+    if (!user) return;
+    const q = query(collection(db, 'jobAds'), where('businessId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const list = snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<JobAd, 'id'>) }));
+    setAds(list);
   }, [user]);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-  }, [theme]);
+    (async () => {
+      if (!user && !userLoading) {
+        router.push('/signin');
+        return;
+      }
+      if (user) {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (!snap.exists() || snap.data().role !== 'business') {
+          router.push('/');
+          return;
+        }
+        setRoleVerified(true);
+      }
+      setCheckingRole(false);
+    })();
+  }, [user, userLoading, router]);
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    alert('You have been signed out.');
-    router.push('/');
-  };
+  useEffect(() => {
+    if (roleVerified) {
+      fetchAds();
+    }
+  }, [roleVerified, fetchAds]);
+
+  if (userLoading || checkingRole) return <PlaneLoader />;
+  if (!roleVerified) return null;
+
+  const now = Timestamp.now();
+  const WEEK = 7 * 24 * 60 * 60;
+  const isPremiumActive = (ad: JobAd) =>
+    ad.tier === 'premium' ? now.seconds - ad.createdAt.seconds < WEEK : true;
+
+  const currentAds = ads.filter(isPremiumActive);
+  const premiumAds = currentAds.filter((ad) => ad.tier === 'premium');
+  const expiredAds = ads.filter((ad) => !isPremiumActive(ad) && ad.tier === 'premium');
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow sticky top-0 z-50">
-      <nav className="max-w-7xl mx-auto px-4 py-3 flex items-center">
-        <div className="flex items-center">
-          <Link href="/">
-            <Image
-              src="/avihirelogo.png"
-              alt="AviHire Logo"
-              width={150}
-              height={40}
-              priority
-              className="cursor-pointer"
-            />
-          </Link>
-        </div>
+    <main className="max-w-7xl mx-auto p-6">
+      <div className="flex gap-6">
+        <aside className="w-1/4">
+          <div className="bg-white p-4 rounded shadow">
+            <h2 className="font-semibold text-lg mb-3">Ad Summary</h2>
 
-        <div className="hidden md:flex flex-1 justify-center space-x-8">
-          <Link href="/about" className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600">
-            About
-          </Link>
-          <Link href="/contact" className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600">
-            Contact
-          </Link>
-        </div>
-
-        <div className="flex items-center space-x-4 ml-auto">
-          {!loading && user ? (
-            <>
-              {userName && (
-                <span className="hidden md:inline-block text-sm font-medium text-gray-600 dark:text-gray-300">
-                  Welcome, {userName.split(' ')[0]}
-                </span>
-              )}
-              <Link
-                href={role === 'business' ? '/dashboard/business' : '/dashboard/user'}
-                className="hidden md:inline-block text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600"
-              >
-                Dashboard
-              </Link>
+            <div>
               <button
-                onClick={handleLogout}
-                className="hidden md:inline-block px-4 py-2 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700"
+                onClick={() => setShowActive((v) => !v)}
+                className="w-full text-left font-medium"
               >
-                Logout
+                🟢 Active Ads ({currentAds.length}) {showActive ? '▲' : '▼'}
               </button>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/signin"
-                className="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-blue-600"
+              {showActive && (
+                <ul className="pl-4 text-sm mt-1 space-y-1">
+                  {currentAds.map((ad) => (
+                    <li key={ad.id}>• {ad.title}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="mt-4">
+              <button
+                onClick={() => setShowPremium((v) => !v)}
+                className="w-full text-left font-medium"
               >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="hidden md:inline-block px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+                🔥 Hot Jobs ({premiumAds.length}) {showPremium ? '▲' : '▼'}
+              </button>
+              {showPremium && (
+                <ul className="pl-4 text-sm mt-1 space-y-1">
+                  {premiumAds.map((ad) => (
+                    <li key={ad.id}>• {ad.title}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="mt-4">
+              <button
+                onClick={() => setShowExpired((v) => !v)}
+                className="w-full text-left font-medium"
               >
-                Sign Up
-              </Link>
-            </>
-          )}
-
-          {!loading && user ? (
-            <Link
-              href="/dashboard/business"
-              className="hidden md:inline-block px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              Post a Job
-            </Link>
-          ) : (
-            <Link
-              href="/signin"
-              className="hidden md:inline-block px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              Post a Job
-            </Link>
-          )}
-
-          <button onClick={() => setTheme(prev => (prev === 'light' ? 'dark' : 'light'))}>
-            {theme === 'light' ? <Moon /> : <Sun />}
-          </button>
-
-          <div className="md:hidden">
-            <button onClick={() => setMobileMenuOpen(o => !o)} aria-label="Toggle menu">
-              {mobileMenuOpen ? <X /> : <Menu />}
-            </button>
+                🔴 Expired Ads ({expiredAds.length}) {showExpired ? '▲' : '▼'}
+              </button>
+              {showExpired && (
+                <ul className="pl-4 text-sm mt-1 space-y-1">
+                  {expiredAds.map((ad) => (
+                    <li key={ad.id}>• {ad.title}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        </div>
-      </nav>
-    </header>
-  );
+        </aside>
+
+        <section className="flex-1">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">Business Dashboard</h1>
+            <Link
+              href="/dashboard/business/post-ad"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Post a New Ad
+            </Link>
+          </div>
+
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold mb-2">Current Ads</h2>
+            {currentAds.length === 0 ? (
+              <p>No active ads yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {currentAds.map((ad) => (
+                  <li key={ad.id} className="border rounded p-4">
+                    <div className="font-bold">{ad.title}</div>
+                    <div className="text-sm text-gray-600">
+                      {ad.location} • {ad.jobType} • {ad.tier.toUpperCase()}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {ad.tier === 'premium'
+                        ? 'Hot Job expires 7 days after posting.'
+                        : 'Regular ad'}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </section>
+      </div>
+    </main>
+);
 }
