@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '@/firebaseConfig';
+import { auth, db } from '@/firebase/firebaseConfig';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '@/firebaseConfig';
+import { auth, db } from '@/firebase/firebaseConfig';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Sun, Moon, Menu, X } from 'lucide-react';

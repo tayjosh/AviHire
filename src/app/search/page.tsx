@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { db } from '@/firebaseConfig';
+import { db } from '@/firebase/firebaseConfig';
 import {
   collection,
   getDocs,

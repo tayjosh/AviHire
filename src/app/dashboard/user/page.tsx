@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '@/firebaseConfig';
+import { auth, db } from '@/firebase/firebaseConfig';
 import { collection, query, where, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import PlaneLoader from '@/components/PlaneLoader';

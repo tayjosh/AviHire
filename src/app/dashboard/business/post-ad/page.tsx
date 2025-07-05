@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/firebaseConfig';
+import { auth, db } from '@/firebase/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 

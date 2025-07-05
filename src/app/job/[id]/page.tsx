@@ -1,6 +1,6 @@
 'use client';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth, db } from '@/firebaseConfig';
+import { auth, db } from '@/firebase/firebaseConfig';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
