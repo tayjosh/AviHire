@@ -4,7 +4,15 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, db } from '@/firebase/firebaseConfig';
-import { collection, query, where, getDocs, Timestamp, doc, getDoc } from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  Timestamp,
+  doc,
+  getDoc,
+} from 'firebase/firestore';
 import Link from 'next/link';
 import PlaneLoader from '@/components/PlaneLoader';
 
@@ -21,6 +29,7 @@ interface JobAd {
 
 export default function BusinessDashboard() {
   const [ads, setAds] = useState<JobAd[]>([]);
+  const [loading, setLoading] = useState(true);             // ← NEW
   const [showActive, setShowActive] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
   const [showExpired, setShowExpired] = useState(false);
@@ -32,12 +41,15 @@ export default function BusinessDashboard() {
 
   const fetchAds = useCallback(async () => {
     if (!user) return;
+    setLoading(true);                                       // ← NEW
     const q = query(collection(db, 'jobAds'), where('businessId', '==', user.uid));
     const snapshot = await getDocs(q);
-    const adData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as JobAd[];
-    setAds(adData);
-    setAds(adData);
+    const adData = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as JobAd[];
+
+    setAds(adData);                                         // ← duplicate removed
+    setLoading(false);                                      // ← NEW
   }, [user]);
+
   useEffect(() => {
     const verifyAccess = async () => {
       if (!user && !userLoading) {
@@ -66,7 +78,10 @@ export default function BusinessDashboard() {
     if (roleVerified) fetchAds();
   }, [roleVerified, fetchAds]);
 
-  if (userLoading || checkingRole) return <PlaneLoader />;
+  // Show loader while authenticating, role-checking, or fetching ads
+  if (userLoading || checkingRole || loading) {
+    return <PlaneLoader />;
+  }
   if (!roleVerified) return null;
 
   const now = Timestamp.now();
@@ -94,7 +109,10 @@ export default function BusinessDashboard() {
             <h2 className="font-semibold text-lg mb-3">Ad Summary</h2>
 
             <div>
-              <button onClick={() => setShowActive((o) => !o)} className="w-full text-left font-medium">
+              <button
+                onClick={() => setShowActive((o) => !o)}
+                className="w-full text-left font-medium"
+              >
                 🟢 Active Ads ({currentAds.length}) {showActive ? '▲' : '▼'}
               </button>
               {showActive && (
@@ -107,7 +125,10 @@ export default function BusinessDashboard() {
             </div>
 
             <div className="mt-4">
-              <button onClick={() => setShowPremium((o) => !o)} className="w-full text-left font-medium">
+              <button
+                onClick={() => setShowPremium((o) => !o)}
+                className="w-full text-left font-medium"
+              >
                 🔥 Hot Jobs ({premiumAds.length}) {showPremium ? '▲' : '▼'}
               </button>
               {showPremium && (
@@ -120,7 +141,10 @@ export default function BusinessDashboard() {
             </div>
 
             <div className="mt-4">
-              <button onClick={() => setShowExpired((o) => !o)} className="w-full text-left font-medium">
+              <button
+                onClick={() => setShowExpired((o) => !o)}
+                className="w-full text-left font-medium"
+              >
                 🔴 Expired Ads ({expiredAds.length}) {showExpired ? '▲' : '▼'}
               </button>
               {showExpired && (
@@ -137,7 +161,10 @@ export default function BusinessDashboard() {
         <section className="flex-1">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Business Dashboard</h1>
-            <Link href="/dashboard/business/post-ad" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <Link
+              href="/dashboard/business/post-ad"
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
               Post a New Ad
             </Link>
           </div>
