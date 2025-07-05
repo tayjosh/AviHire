@@ -21,7 +21,6 @@ interface JobAd {
 
 export default function BusinessDashboard() {
   const [ads, setAds] = useState<JobAd[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showActive, setShowActive] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
   const [showExpired, setShowExpired] = useState(false);
@@ -37,9 +36,8 @@ export default function BusinessDashboard() {
     const snapshot = await getDocs(q);
     const adData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as JobAd[];
     setAds(adData);
-    setLoading(false);
+    setAds(adData);
   }, [user]);
-
   useEffect(() => {
     const verifyAccess = async () => {
       if (!user && !userLoading) {
@@ -54,7 +52,7 @@ export default function BusinessDashboard() {
             return;
           }
           setRoleVerified(true);
-        } catch (e) {
+        } catch {
           router.push('/signin');
         } finally {
           setCheckingRole(false);

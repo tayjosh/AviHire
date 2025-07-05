@@ -30,6 +30,14 @@ export default function UserDashboard() {
   const [user, userLoading] = useAuthState(auth);
   const router = useRouter();
 
+  const fetchAds = useCallback(async () => {
+    if (!user) return;
+    const q = query(collection(db, 'jobAds'), where('businessId', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const adData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as JobAd[];
+    setAds(adData);
+  }, [user]);
+
   useEffect(() => {
     const verifyAccess = async () => {
       if (!user && !userLoading) {
@@ -54,24 +62,15 @@ export default function UserDashboard() {
     verifyAccess();
   }, [user, userLoading, router]);
 
+  useEffect(() => {
+    if (roleVerified) fetchAds();
+  }, [roleVerified, fetchAds]);
+
   // Prevent rendering main content until auth/role is confirmed
   if (userLoading || checkingRole) {
     return <PlaneLoader />;
   }
   if (!roleVerified) return null;
-
-  // Ads fetching logic is only after role verified
-  const fetchAds = useCallback(async () => {
-    if (!user) return;
-    const q = query(collection(db, 'jobAds'), where('businessId', '==', user.uid));
-    const snapshot = await getDocs(q);
-    const adData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as JobAd[];
-    setAds(adData);
-  }, [user]);
-
-  useEffect(() => {
-    if (roleVerified) fetchAds();
-  }, [roleVerified, fetchAds]);
 
   const now = Timestamp.now();
   const SEVEN_DAYS = 7 * 24 * 60 * 60;
