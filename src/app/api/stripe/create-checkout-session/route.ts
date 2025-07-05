@@ -1,32 +1,32 @@
+// src/app/api/stripe/create-checkout-session/route.ts
 import Stripe from 'stripe';
-import { NextResponse } from 'next/server';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+// Initialize Stripe without specifying apiVersion, so it uses the version bundled in your installed package
+type Env = { STRIPE_SECRET_KEY: string };
+const stripe = new Stripe((process.env.STRIPE_SECRET_KEY as Env['STRIPE_SECRET_KEY']), {
+  // No apiVersion override here
 });
 
 export async function POST(req: Request) {
-  const { adId } = await req.json();
+  try {
+    const { priceId } = await req.json();
 
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [{
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: 'Premium Job Ad - 7 Days',
-        },
-        unit_amount: 2500, // $25.00
-      },
-      quantity: 1,
-    }],
-    mode: 'payment',
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/business/payment-success?adId=${adId}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/business`,
-    metadata: {
-      adId,
-    },
-  });
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: new URL('/success', req.url).toString(),
+      cancel_url: new URL('/cancel', req.url).toString(),
+    });
 
-  return NextResponse.json({ url: session.url });
+    return new Response(JSON.stringify({ sessionId: session.id }), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (err: unknown) {
+    console.error('Stripe checkout creation error:', err);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 }
