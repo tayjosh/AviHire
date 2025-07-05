@@ -2,12 +2,13 @@
   "name": "avihire",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
+    "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
+
   "dependencies": {
     "@headlessui/react": "^2.2.4",
     "firebase": "^9.23.0",

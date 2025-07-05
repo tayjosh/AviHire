@@ -1,32 +1,39 @@
-// src/app/api/stripe/create-checkout-session/route.ts
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-// Initialize Stripe without specifying apiVersion, so it uses the version bundled in your installed package
-type Env = { STRIPE_SECRET_KEY: string };
-const stripe = new Stripe((process.env.STRIPE_SECRET_KEY as Env['STRIPE_SECRET_KEY']), {
-  // No apiVersion override here
+// Make sure we actually have a key
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing STRIPE_SECRET_KEY in environment');
+}
+
+// Initialize Stripe with your secret key
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2025-06-30.basil'
 });
 
+
+type CheckoutItem = {
+  name: string;
+  price: number;
+  quantity: number;
+};
+
 export async function POST(req: Request) {
-  try {
-    const { priceId } = await req.json();
+  const { items } = await req.json() as { items: CheckoutItem[] };
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: new URL('/success', req.url).toString(),
-      cancel_url: new URL('/cancel', req.url).toString(),
-    });
+  const session = await stripe.checkout.sessions.create({
+    line_items: items.map((item: CheckoutItem) => ({
+      price_data: {
+        currency: 'usd',
+        product_data: { name: item.name },
+        unit_amount: item.price * 100,
+      },
+      quantity: item.quantity,
+    })),
+    mode: 'payment',
+    success_url: `${req.headers.get('origin')}/success`,
+    cancel_url: `${req.headers.get('origin')}/cancel`,
+  });
 
-    return new Response(JSON.stringify({ sessionId: session.id }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (err: unknown) {
-    console.error('Stripe checkout creation error:', err);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  return NextResponse.json({ url: session.url });
 }
